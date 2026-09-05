@@ -9,7 +9,7 @@
 
 **A fast, lightweight, and elegant CLI utility for generating synthetic/mock test identities with persistent local uniqueness guarantees.**
 
-[Installation](#installation) • [Quick Start](#quick-start) • [Command Reference](#command-reference) • [Excel Export](#excel-export) • [Custom Storage](#custom-storage-d-drive-support)
+[Installation](#installation) • [Quick Start](#quick-start) • [Command Reference](#command-reference) • [Excel Export](#excel-export) • [Custom Storage](#custom-storage-location)
 
 </div>
 
@@ -18,6 +18,7 @@
 > [!NOTE]
 > ### 🛡️ Synthetic & Test Data Guarantee
 > All data produced by Identity CLI is purely synthetic for development, QA testing, and software demonstrations:
+> * **Names**: Realistically synthesized by combining first and last names with persistent uniqueness checks to ensure no real person's identity is targeted.
 > * **Emails**: Exclusively use official RFC-reserved test domains (`example.com`, `example.org`, `example.net`).
 > * **Phone Numbers**: Exclusively use North American reserved fictional test ranges (`555-0100` through `555-0199`).
 > * **Local First**: Runs 100% offline on your machine. Zero tracking, zero telemetry, and zero network calls.
@@ -123,49 +124,13 @@ Generating 5 identities...
 
 ---
 
-### `identity config`
+### Other CLI Commands
 
-View or customize your persistent storage location.
-
-```bash
-identity config
-```
-
-```text
-Identity CLI Configuration
-
-Data directory:
-C:\Users\swaya\AppData\Local\IdentityCLI
-
-Exports directory:
-C:\Users\swaya\AppData\Local\IdentityCLI\exports
-
-Stored names:     127
-Stored emails:    127
-Stored passwords: 127
-Stored phones:    84
-```
-
----
-
-### `identity history`
-
-Inspect total generation statistics:
-
-```bash
-identity history
-```
-
----
-
-### `identity version`
-
-```bash
-identity version
-```
-```text
-Identity CLI v0.1.0
-```
+| Command | Description |
+|---|---|
+| `identity config` | View current persistent storage location and history counts (or set `--data-dir <path>`). |
+| `identity history` | Display statistics and counts for stored synthetic identities. |
+| `identity version` | Display the installed version of Identity CLI. |
 
 ---
 
@@ -186,7 +151,7 @@ Generating 25 identities...
 ✓ Excel file created
 
 File:
-D:\IdentityData\exports\identity_2026-09-05_160544.xlsx
+<storage-directory>/exports/identity_YYYY-MM-DD_HHMMSS.xlsx
 ```
 
 **Spreadsheet Features:**
@@ -224,18 +189,18 @@ identity generate --count 2 --phone --json
 
 ---
 
-## 💾 Custom Storage (D: Drive Support)
+## 💾 Custom Storage Location
 
-By default, data is stored in your user application directory (`%LOCALAPPDATA%\IdentityCLI` on Windows).
+By default, persistent data is stored in your user application directory (`%LOCALAPPDATA%\IdentityCLI` on Windows, or `~/.local/share/identity_cli` on Linux/macOS).
 
-To move your storage and Excel exports to another folder or drive (e.g. `D:\IdentityData`), simply run:
+To move your storage and Excel exports to any custom folder, drive, or path (e.g. `D:\IdentityData`, `E:\TestStorage`, or `/custom/path`), simply run:
 
 ```bash
-identity config --data-dir D:\IdentityData
+identity config --data-dir <path-to-directory>
 ```
 
-* The CLI permanently remembers this setting across all terminals and reboots.
-* All generated history (`names.txt`, `emails.txt`, `passwords.txt`, `phones.txt`) and Excel spreadsheets will now reside in `D:\IdentityData`.
+* The CLI permanently remembers this setting across all terminals and system reboots.
+* All generated history (`names.txt`, `emails.txt`, `passwords.txt`, `phones.txt`) and Excel spreadsheets will automatically reside in your chosen directory.
 
 ---
 
