@@ -51,9 +51,25 @@ export class SetupWebviewPanel {
             }
             return;
 
+          case 'browseDataDir':
+            const dataUris = await vscode.window.showOpenDialog({
+              canSelectFiles: false,
+              canSelectFolders: true,
+              canSelectMany: false,
+              openLabel: 'Select History Data Folder',
+            });
+            if (dataUris && dataUris.length > 0) {
+              this._panel.webview.postMessage({
+                command: 'setDataDir',
+                path: dataUris[0].fsPath,
+              });
+            }
+            return;
+
           case 'savePreferences':
             const updatedPrefs: IdentityPreferences = {
               defaultLocation: message.data.defaultLocation,
+              dataDirectory: message.data.dataDirectory || '',
               defaultFields: message.data.defaultFields,
               defaultQuantity: parseInt(message.data.defaultQuantity, 10) || 1,
               defaultFormat: message.data.defaultFormat,
@@ -99,7 +115,7 @@ export class SetupWebviewPanel {
   <title>Identity Generator Setup</title>
   <style>
     body {
-      font-family: var(--vscode-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+      font-family: var(--vscode-font-family);
       color: var(--vscode-foreground);
       background-color: var(--vscode-editor-background);
       padding: 24px 32px;
@@ -108,31 +124,29 @@ export class SetupWebviewPanel {
       margin: 0 auto;
     }
     h2 {
-      font-size: 1.5rem;
-      margin-bottom: 4px;
+      margin-top: 0;
       color: var(--vscode-editor-foreground);
+      font-size: 1.4rem;
+      border-bottom: 1px solid var(--vscode-panel-border);
+      padding-bottom: 8px;
     }
     .subtitle {
+      font-size: 0.9rem;
       color: var(--vscode-descriptionForeground);
       margin-bottom: 24px;
-      font-size: 0.95rem;
     }
     .section {
-      background: var(--vscode-editorWidget-background, rgba(127, 127, 127, 0.08));
-      border: 1px solid var(--vscode-widget-border, rgba(127, 127, 127, 0.2));
-      border-radius: 6px;
-      padding: 16px 20px;
       margin-bottom: 20px;
     }
     .section-title {
       font-weight: 600;
-      font-size: 1rem;
-      margin-bottom: 8px;
+      font-size: 0.95rem;
+      margin-bottom: 6px;
     }
     .section-desc {
       font-size: 0.85rem;
       color: var(--vscode-descriptionForeground);
-      margin-bottom: 12px;
+      margin-bottom: 8px;
     }
     .flex-row {
       display: flex;
@@ -142,11 +156,10 @@ export class SetupWebviewPanel {
     input[type="text"], input[type="number"], select {
       background: var(--vscode-input-background);
       color: var(--vscode-input-foreground);
-      border: 1px solid var(--vscode-input-border, rgba(127, 127, 127, 0.4));
+      border: 1px solid var(--vscode-input-border);
       padding: 6px 10px;
       border-radius: 4px;
       font-size: 0.9rem;
-      outline: none;
     }
     input[type="text"]:focus, input[type="number"]:focus, select:focus {
       border-color: var(--vscode-focusBorder);
@@ -210,7 +223,7 @@ export class SetupWebviewPanel {
   <form id="prefsForm">
     <!-- 1. Location -->
     <div class="section">
-      <div class="section-title">1. Default Output Location</div>
+      <div class="section-title">1. Default File Export Location</div>
       <div class="section-desc">Folder where generated Excel, JSON, and CSV files will be stored.</div>
       <div class="flex-row">
         <input type="text" id="defaultLocation" value="${prefs.defaultLocation}" required />
@@ -218,16 +231,26 @@ export class SetupWebviewPanel {
       </div>
     </div>
 
-    <!-- 2. Subfolder -->
+    <!-- 2. Data Directory (History) -->
     <div class="section">
-      <div class="section-title">2. Generated Folder Name</div>
+      <div class="section-title">2. Persistent History Directory (Data Directory)</div>
+      <div class="section-desc">Folder where uniqueness history files (names.txt, emails.txt, passwords.txt, phones.txt) are saved to prevent duplicates. Leave empty to use system default.</div>
+      <div class="flex-row">
+        <input type="text" id="dataDirectory" value="${prefs.dataDirectory || ''}" placeholder="Default: OS AppData folder" />
+        <button type="button" class="btn-secondary" onclick="browseDataDir()">Browse...</button>
+      </div>
+    </div>
+
+    <!-- 3. Subfolder -->
+    <div class="section">
+      <div class="section-title">3. Generated Folder Name</div>
       <div class="section-desc">Automatic subfolder name created inside the output location.</div>
       <input type="text" id="folderName" value="${prefs.folderName}" style="width: 240px;" required />
     </div>
 
-    <!-- 3. Default Fields -->
+    <!-- 4. Default Fields -->
     <div class="section">
-      <div class="section-title">3. Default Fields</div>
+      <div class="section-title">4. Default Fields</div>
       <div class="section-desc">Select which fields should be generated when --fields is omitted:</div>
       <div class="checkbox-group">
         <label class="checkbox-label">
@@ -245,9 +268,9 @@ export class SetupWebviewPanel {
       </div>
     </div>
 
-    <!-- 4. Default Quantity & Format -->
+    <!-- 5. Default Quantity & Format -->
     <div class="section">
-      <div class="section-title">4. Default Quantity & Format</div>
+      <div class="section-title">5. Default Quantity & Format</div>
       <div class="section-desc">Initial defaults for <code>identity generate</code>:</div>
       <div class="flex-row" style="gap: 24px;">
         <div>
@@ -280,10 +303,16 @@ export class SetupWebviewPanel {
       vscode.postMessage({ command: 'browseFolder' });
     }
 
+    function browseDataDir() {
+      vscode.postMessage({ command: 'browseDataDir' });
+    }
+
     window.addEventListener('message', event => {
       const message = event.data;
       if (message.command === 'setFolder') {
         document.getElementById('defaultLocation').value = message.path;
+      } else if (message.command === 'setDataDir') {
+        document.getElementById('dataDirectory').value = message.path;
       }
     });
 
@@ -305,6 +334,7 @@ export class SetupWebviewPanel {
         command: 'savePreferences',
         data: {
           defaultLocation: document.getElementById('defaultLocation').value,
+          dataDirectory: document.getElementById('dataDirectory').value.trim(),
           folderName: document.getElementById('folderName').value,
           defaultQuantity: document.getElementById('defaultQuantity').value,
           defaultFormat: document.getElementById('defaultFormat').value,

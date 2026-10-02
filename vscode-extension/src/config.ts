@@ -5,6 +5,7 @@ import * as vscode from 'vscode';
 
 export interface IdentityPreferences {
   defaultLocation: string;
+  dataDirectory?: string;
   defaultFields: string[];
   defaultQuantity: number;
   defaultFormat: string;
@@ -37,6 +38,7 @@ export function readSharedConfig(): Partial<IdentityPreferences> {
     const data = JSON.parse(raw);
     return {
       defaultLocation: data.default_location || '',
+      dataDirectory: data.data_dir || '',
       defaultFields: data.default_fields || ['name', 'email', 'password'],
       defaultQuantity: data.default_quantity || 1,
       defaultFormat: data.default_format || 'terminal',
@@ -65,6 +67,9 @@ export function saveSharedConfig(prefs: IdentityPreferences): void {
   }
 
   existing.default_location = prefs.defaultLocation;
+  if (prefs.dataDirectory !== undefined && prefs.dataDirectory.trim() !== '') {
+    existing.data_dir = prefs.dataDirectory;
+  }
   existing.default_fields = prefs.defaultFields;
   existing.default_quantity = prefs.defaultQuantity;
   existing.default_format = prefs.defaultFormat;
@@ -80,6 +85,7 @@ export function getPreferences(): IdentityPreferences {
 
   return {
     defaultLocation: shared.defaultLocation || vscodeConfig.get<string>('defaultLocation') || path.join(os.homedir(), 'IdentityData'),
+    dataDirectory: shared.dataDirectory || vscodeConfig.get<string>('dataDirectory') || '',
     defaultFields: shared.defaultFields || vscodeConfig.get<string[]>('defaultFields') || ['name', 'email', 'password'],
     defaultQuantity: shared.defaultQuantity || vscodeConfig.get<number>('defaultQuantity') || 1,
     defaultFormat: shared.defaultFormat || vscodeConfig.get<string>('defaultFormat') || 'terminal',
@@ -95,6 +101,9 @@ export async function persistPreferences(prefs: IdentityPreferences): Promise<vo
   // 2. Save to VS Code configuration
   const vscodeConfig = vscode.workspace.getConfiguration('identityGenerator');
   await vscodeConfig.update('defaultLocation', prefs.defaultLocation, vscode.ConfigurationTarget.Global);
+  if (prefs.dataDirectory !== undefined) {
+    await vscodeConfig.update('dataDirectory', prefs.dataDirectory, vscode.ConfigurationTarget.Global);
+  }
   await vscodeConfig.update('defaultFields', prefs.defaultFields, vscode.ConfigurationTarget.Global);
   await vscodeConfig.update('defaultQuantity', prefs.defaultQuantity, vscode.ConfigurationTarget.Global);
   await vscodeConfig.update('defaultFormat', prefs.defaultFormat, vscode.ConfigurationTarget.Global);

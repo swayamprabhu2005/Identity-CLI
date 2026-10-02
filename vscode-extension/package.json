@@ -60,6 +60,11 @@
           "default": "",
           "description": "Default directory path for file-based exports (Excel, JSON, CSV)."
         },
+        "identityGenerator.dataDirectory": {
+          "type": "string",
+          "default": "",
+          "description": "Persistent storage directory for uniqueness history files (names.txt, emails.txt, passwords.txt, phones.txt). Leave empty for system default."
+        },
         "identityGenerator.defaultFields": {
           "type": "array",
           "items": {

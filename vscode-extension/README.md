@@ -4,77 +4,127 @@
 
 ---
 
+## 📑 Quick Navigation
+* [⚡ Quick Start & Terminal Usage](#-the-integrated-terminal-experience)
+* [⚙️ Configuration & Preferences](#-configuration--preferences)
+* [✨ Features](#-features)
+* [🚀 Command Examples](#-quick-usage-examples)
+* [🔒 Storage Separation & Data Directory](#-storage-separation--data-directory)
+* [📖 Built-in Manual (`identity man`)](#-built-in-manual)
+* [📄 License](#-license)
+
+---
+
 ## ⚡ The Integrated Terminal Experience
 
-Once installed, Identity Generator gives you a first-time configuration screen to set your preferences. Afterward, you simply work from the **VS Code integrated terminal**:
+Once installed, Identity Generator prompts you with a quick setup screen to configure your preferred defaults. Afterward, you simply work directly from the **VS Code integrated terminal**:
 
 ```bash
 identity generate
 ```
 
-No Command Palette browsing every time you need mock data. Just type and generate!
+```text
+┌─────────── GENERATED IDENTITY ────────────┐
+│ Name     : Ethan Brooks                   │
+│ Email    : ethan.brooks482@example.com    │
+│ Password : V!7qL@92xK#p                   │
+└───────────────────────────────────────────┘
 
----
-
-## ✨ Features
-
-- 🛠️ **Terminal-First Workflow**: Run `identity generate` directly inside any integrated terminal in VS Code.
-- ⚙️ **One-Time Configuration**: Set your preferred export location, default fields, quantity, and formats once.
-- 🎯 **Flexible Fields**: Generate only the fields you need (`--fields name`, `--fields email,password`, etc.).
-- 📊 **Multiple Output Formats**: Display immediately in the terminal, or export to clean **Excel (.xlsx)**, **JSON**, or **CSV** spreadsheets.
-- 📁 **Organized File Generation**: Automatically creates a `generated-names/` folder in your project or storage location.
-- 📖 **Built-in Manual**: Instant reference documentation available anytime with `identity man`.
-- 🔁 **Guaranteed Local Uniqueness**: Never get duplicate identities across sessions.
-
----
-
-## 🚀 Quick Usage Examples
-
-Inside your VS Code terminal:
-
-```bash
-# Generate 1 identity to terminal (default)
-identity generate
-
-# Generate 5 identities
-identity generate --count 5
-
-# Generate only names
-identity generate --fields name
-
-# Generate names and emails
-identity generate --fields name,email
-
-# Export to JSON
-identity generate --format json
-
-# Export to Excel
-identity generate --format excel
-
-# Target current project directory
-identity generate --location .
-
-# Full combined command
-identity generate --count 100 --fields name,email --format excel --location ./test-data
-
-# Open full CLI manual
-identity man
+✓ Identity generated successfully.
 ```
+
+No Command Palette browsing every time you need mock data. Just open your terminal (`Ctrl+\``) and generate!
 
 ---
 
 ## ⚙️ Configuration & Preferences
 
-To reopen preferences anytime:
-1. Open the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`).
-2. Type and select **`Identity Generator: Configure Preferences`**.
+You can access and update your preferences anytime in two convenient ways:
 
-### Configurable Settings:
-- **Default Location**: Directory where exported files are saved (e.g. `D:\IdentityData`).
-- **Default Fields**: Full Name, Email Address, Secure Password, Reserved Phone.
-- **Default Quantity**: Initial count (defaults to `1`).
-- **Default Format**: `terminal`, `excel`, `json`, or `csv`.
-- **Folder Name**: Automatic subfolder name (defaults to `generated-names`).
+### Method 1: The Visual Setup Wizard
+1. Open the Command Palette (`Ctrl+Shift+P` on Windows/Linux or `Cmd+Shift+P` on macOS).
+2. Type and select **`Identity Generator: Configure Preferences`**.
+3. Use the interactive folder pickers and checkboxes, then click **Save Preferences**.
+
+### Method 2: Standard VS Code Settings
+Press `Ctrl+,` (or `Cmd+,` on macOS), search for **`Identity Generator`**, and adjust your preferences:
+* **Default Export Location**: Target folder where exported files are saved.
+* **Data Directory**: Dedicated storage folder for persistent uniqueness history (`names.txt`, `emails.txt`, etc.).
+* **Default Fields**: Check/uncheck Full Name, Email, Password, or Phone.
+* **Default Quantity**: Default number of identities to generate.
+* **Default Format**: `terminal`, `excel`, `json`, or `csv`.
+* **Folder Name**: Automatic subfolder name (default: `generated-names`).
+
+---
+
+## ✨ Features
+
+- 🛠️ **Terminal-First Workflow**: Run `identity generate` natively in any integrated terminal inside VS Code.
+- 🎯 **Direct Single-Field Flags**: Generate single fields with zero boilerplate (e.g. `identity generate --name` or `identity generate --email`).
+- 📊 **Instant File Exports**: Direct flags for **Excel (`--excel`)**, **JSON (`--json`)**, and **CSV (`--csv`)**.
+- 🔒 **Persistent Local Uniqueness**: Names and emails already generated are remembered locally so you never get duplicates, even across different sessions.
+- ⚙️ **One-Time Graphical Wizard**: Configure paths and fields visually without manually editing JSON files.
+- 📦 **Zero-Setup Python Runtime**: Comes with self-contained logic and automated dependency resolution—works out of the box on any system with Python installed.
+- 📖 **Built-in Manual**: Instant Unix-style reference documentation right in your terminal with `identity man`.
+
+---
+
+## 🚀 Quick Usage Examples
+
+Inside any VS Code integrated terminal:
+
+```bash
+# Generate 1 identity to terminal (default: name, email, password)
+identity generate
+
+# Generate single fields directly
+identity generate --name
+identity generate --email
+identity generate --password
+identity generate --phone
+
+# Generate multiple identities
+identity generate --count 5
+
+# Export directly to Excel (.xlsx)
+identity generate --excel
+
+# Export 25 names and emails to Excel
+identity generate --count 25 --fields name,email --excel
+
+# Output raw JSON to terminal / stdout
+identity generate --count 3 --json
+
+# Export to CSV in a custom target folder
+identity generate --count 50 --csv --location ./test-data
+
+# Open comprehensive built-in reference manual
+identity man
+```
+
+---
+
+## 🔒 Storage Separation & Data Directory
+
+Identity Generator cleanly separates your **exports** from your **history**:
+
+| Setting | Purpose | Configuration Flag |
+| :--- | :--- | :--- |
+| **Default Export Location** | Where generated Excel, JSON, and CSV files are saved | `identity generate --location <path>` |
+| **Data Directory** | Where persistent uniqueness history (`names.txt`, `emails.txt`, etc.) is kept | `identity config --data-dir <path>` |
+
+* Neither setting overwrites or interferes with the other.
+* If you ever want to reset your uniqueness history to allow old names to appear again, simply clear the text files in your Data Directory.
+
+---
+
+## 📖 Built-in Manual
+
+Whenever you need a refresher on options, precedence rules, or field aliases, simply run:
+
+```bash
+identity man
+```
 
 ---
 
