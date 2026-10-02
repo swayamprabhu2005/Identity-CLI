@@ -2,7 +2,7 @@
   "name": "identity-generator",
   "displayName": "Identity Generator",
   "description": "Developer utility for generating unique synthetic mock identities directly from the VS Code integrated terminal.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "swayamprabhu2005",
   "icon": "icon.png",
   "engines": {

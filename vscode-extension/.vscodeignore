@@ -4,4 +4,6 @@ src/**
 node_modules/**
 tsconfig.json
 logo.png
+publisher_logo.png
 *.vsix
+python/**/__pycache__/**

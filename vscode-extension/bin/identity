@@ -8,8 +8,10 @@ which -a identity 2>/dev/null | while read -r line; do
     fi
 done
 
-# 2. If running from repository or alongside src, ensure PYTHONPATH includes src
-if [ -d "$SELF_DIR/../../src/identity_cli" ]; then
+# 2. Check bundled python directory inside extension, repository src, or alt paths
+if [ -d "$SELF_DIR/../python/identity_cli" ]; then
+    export PYTHONPATH="$SELF_DIR/../python:$PYTHONPATH"
+elif [ -d "$SELF_DIR/../../src/identity_cli" ]; then
     export PYTHONPATH="$SELF_DIR/../../src:$PYTHONPATH"
 elif [ -d "$SELF_DIR/../src/identity_cli" ]; then
     export PYTHONPATH="$SELF_DIR/../src:$PYTHONPATH"
@@ -17,10 +19,18 @@ fi
 
 # 3. Try running via python3 / python
 if command -v python3 &>/dev/null; then
+    if ! python3 -c "import faker, openpyxl, rich, typer" &>/dev/null; then
+        echo "[Identity Generator] First-time setup: installing required dependencies (faker, openpyxl, rich, typer)..."
+        python3 -m pip install --quiet faker openpyxl rich typer
+    fi
     exec python3 -m identity_cli.cli "$@"
 fi
 
 if command -v python &>/dev/null; then
+    if ! python -c "import faker, openpyxl, rich, typer" &>/dev/null; then
+        echo "[Identity Generator] First-time setup: installing required dependencies (faker, openpyxl, rich, typer)..."
+        python -m pip install --quiet faker openpyxl rich typer
+    fi
     exec python -m identity_cli.cli "$@"
 fi
 

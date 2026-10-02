@@ -10,7 +10,11 @@ export function activate(context: vscode.ExtensionContext) {
   const binDir = path.join(context.extensionPath, 'bin');
   context.environmentVariableCollection.prepend('PATH', binDir + path.delimiter);
 
-  // Prepend project src directory to PYTHONPATH so Python module identity_cli is discoverable
+  // Prepend bundled python or project src directory to PYTHONPATH
+  const bundledPython = path.join(context.extensionPath, 'python');
+  if (fs.existsSync(bundledPython)) {
+    context.environmentVariableCollection.prepend('PYTHONPATH', bundledPython + path.delimiter);
+  }
   const projectSrc = path.resolve(context.extensionPath, '..', 'src');
   if (fs.existsSync(projectSrc)) {
     context.environmentVariableCollection.prepend('PYTHONPATH', projectSrc + path.delimiter);

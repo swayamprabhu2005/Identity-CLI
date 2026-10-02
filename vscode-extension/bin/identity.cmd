@@ -9,7 +9,11 @@ for /f "tokens=*" %%i in ('where identity.exe 2^>nul') do (
     )
 )
 
-:: 2. If running from repository or alongside src, ensure PYTHONPATH includes src
+:: 2. Check bundled python directory inside extension, repository src, or alt paths
+set "BUNDLE_SRC=%~dp0..\python"
+if exist "%BUNDLE_SRC%\identity_cli" (
+    set "PYTHONPATH=%BUNDLE_SRC%;%PYTHONPATH%"
+)
 set "REPO_SRC=%~dp0..\..\src"
 if exist "%REPO_SRC%\identity_cli" (
     set "PYTHONPATH=%REPO_SRC%;%PYTHONPATH%"
@@ -22,6 +26,11 @@ if exist "%ALT_SRC%\identity_cli" (
 :: 3. Try running identity_cli via Python module
 where python.exe >nul 2>nul
 if %ERRORLEVEL% equ 0 (
+    python.exe -c "import faker, openpyxl, rich, typer" >nul 2>nul
+    if %ERRORLEVEL% neq 0 (
+        echo [Identity Generator] First-time setup: installing required dependencies (faker, openpyxl, rich, typer)...
+        python.exe -m pip install --quiet faker openpyxl rich typer
+    )
     python.exe -m identity_cli.cli %*
     exit /b %ERRORLEVEL%
 )
@@ -29,6 +38,11 @@ if %ERRORLEVEL% equ 0 (
 :: 4. Fallback to py launcher
 where py.exe >nul 2>nul
 if %ERRORLEVEL% equ 0 (
+    py.exe -c "import faker, openpyxl, rich, typer" >nul 2>nul
+    if %ERRORLEVEL% neq 0 (
+        echo [Identity Generator] First-time setup: installing required dependencies (faker, openpyxl, rich, typer)...
+        py.exe -m pip install --quiet faker openpyxl rich typer
+    )
     py.exe -m identity_cli.cli %*
     exit /b %ERRORLEVEL%
 )
