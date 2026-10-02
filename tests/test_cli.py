@@ -12,7 +12,7 @@ from identity_cli.storage import StorageManager
 
 
 def test_cli_version(cli_runner: CliRunner) -> None:
-    result = cli_runner.invoke(app, ["version"])
+    result = cli_runner.invoke(app, ["--version"])
     assert result.exit_code == 0
     assert "Identity CLI v0.1.0" in result.output
 
@@ -23,15 +23,14 @@ def test_cli_help(cli_runner: CliRunner) -> None:
     assert "generate" in result.output
     assert "config" in result.output
     assert "history" in result.output
+    assert "man" in result.output
 
 
-def test_cli_generate_help(cli_runner: CliRunner) -> None:
-    result = cli_runner.invoke(app, ["generate", "--help"])
+def test_cli_generate_direct_name(cli_runner: CliRunner, isolated_config: ConfigManager) -> None:
+    result = cli_runner.invoke(app, ["generate", "--name"])
     assert result.exit_code == 0
-    assert "--count" in result.output
-    assert "--phone" in result.output
-    assert "--excel" in result.output
-    assert "--json" in result.output
+    assert "Name" in result.output
+    assert "Email" not in result.output
 
 
 def test_cli_generate_single(cli_runner: CliRunner, isolated_config: ConfigManager) -> None:
@@ -83,7 +82,7 @@ def test_cli_generate_batch_json(cli_runner: CliRunner, isolated_config: ConfigM
 
 
 def test_cli_generate_batch_with_excel(cli_runner: CliRunner, isolated_config: ConfigManager) -> None:
-    result = cli_runner.invoke(app, ["generate", "--count", "10", "--phone", "--excel"])
+    result = cli_runner.invoke(app, ["generate", "--count", "10", "--fields", "name,email,password,phone", "--excel"])
     assert result.exit_code == 0
     assert "Generated 10 identities" in result.output
     assert "Excel file created" in result.output

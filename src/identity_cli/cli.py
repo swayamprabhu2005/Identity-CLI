@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 import sys
 from typing import List, Optional
@@ -21,8 +22,9 @@ from rich.panel import Panel
 
 from identity_cli import __version__
 from identity_cli.config import ConfigManager
-from identity_cli.excel import export_to_excel
-from identity_cli.generator import IdentityGenerator
+from identity_cli.exports import FIELD_LABELS, export_to_csv, export_to_excel, export_to_json
+from identity_cli.generator import IdentityGenerator, normalize_fields
+from identity_cli.man import display_manual
 from identity_cli.models import Identity
 from identity_cli.storage import StorageManager
 
@@ -34,6 +36,28 @@ app = typer.Typer(
 )
 console = Console()
 err_console = Console(stderr=True)
+
+
+def version_callback(value: bool) -> None:
+    """Callback for --version flag."""
+    if value:
+        typer.echo(f"Identity CLI v{__version__}")
+        raise typer.Exit()
+
+
+@app.callback()
+def main(
+    version: Optional[bool] = typer.Option(
+        None,
+        "--version",
+        "-v",
+        callback=version_callback,
+        is_eager=True,
+        help="Display Identity CLI version and exit.",
+    ),
+) -> None:
+    """Identity CLI entrypoint."""
+    pass
 
 
 def get_check_mark() -> str:
@@ -54,25 +78,50 @@ def get_managers(custom_config_file: Optional[Path] = None) -> tuple[ConfigManag
     return config_mgr, storage_mgr
 
 
-@app.command(name="version", help="Display Identity CLI version.")
-def version() -> None:
-    """Show the application version."""
-    typer.echo(f"Identity CLI v{__version__}")
+@app.command(name="man", help="Display comprehensive reference manual.")
+def man_command() -> None:
+    """Display Identity CLI reference manual."""
+    display_manual(console)
 
 
-@app.command(name="generate", help="Generate synthetic identities with persistent uniqueness.")
+@app.command(
+    name="generate",
+    help="Generate synthetic identities with persistent uniqueness.",
+    context_settings={"help_option_names": []},
+)
 def generate(
-    count: int = typer.Option(
-        1,
+    count: Optional[int] = typer.Option(
+        None,
         "--count",
         "-c",
         help="Number of identities to generate (1-10,000).",
+    ),
+    name: bool = typer.Option(
+        False,
+        "--name",
+        help="Generate name field.",
+    ),
+    email: bool = typer.Option(
+        False,
+        "--email",
+        help="Generate email field.",
+    ),
+    password: bool = typer.Option(
+        False,
+        "--password",
+        help="Generate password field.",
     ),
     phone: bool = typer.Option(
         False,
         "--phone",
         "-p",
-        help="Include a reserved test phone number.",
+        help="Generate phone field.",
+    ),
+    fields: Optional[str] = typer.Option(
+        None,
+        "--fields",
+        "-f",
+        help="Comma-separated list of multiple fields (e.g. name,email).",
     ),
     excel: bool = typer.Option(
         False,
@@ -84,88 +133,189 @@ def generate(
         False,
         "--json",
         "-j",
-        help="Output in clean JSON format.",
+        help="Output or export generated identities in JSON format.",
     ),
-    quiet: bool = typer.Option(
+    csv_output: bool = typer.Option(
         False,
-        "--quiet",
-        "-q",
-        help="Suppress decorative status and header messages.",
+        "--csv",
+        help="Export generated identities to CSV.",
+    ),
+    terminal_output: bool = typer.Option(
+        False,
+        "--terminal",
+        "-t",
+        help="Output generated identities to the terminal.",
+    ),
+    location: Optional[Path] = typer.Option(
+        None,
+        "--location",
+        "-l",
+        help="Target folder for file exports (e.g. . or ./test-data).",
     ),
 ) -> None:
     """Generate one or more unique synthetic identities."""
     try:
-        _, storage_mgr = get_managers()
+        config_mgr, storage_mgr = get_managers()
         generator = IdentityGenerator(storage=storage_mgr)
 
-        # Batch size validation
-        if count < 1:
+        # 1. Resolve quantity (precedence: CLI argument -> saved preference -> 1)
+        if count is not None:
+            batch_count = count
+        else:
+            batch_count = config_mgr.get_default_quantity()
+
+        if batch_count < 1:
             err_console.print("[bold red]Error:[/bold red] Count must be greater than 0.")
             raise typer.Exit(code=1)
-        if count > 10000:
+        if batch_count > 10000:
             err_console.print("[bold red]Error:[/bold red] Maximum batch size is 10,000.")
             raise typer.Exit(code=1)
 
-        if not json_output and not quiet and count > 1:
-            console.print(f"Generating {count} identities...")
+        # 2. Resolve fields (precedence: Direct flags -> CLI --fields argument -> saved preference)
+        direct_fields = []
+        if name:
+            direct_fields.append("name")
+        if email:
+            direct_fields.append("email")
+        if password:
+            direct_fields.append("password")
+        if phone:
+            direct_fields.append("phone")
 
-        # 1. Generate complete batch in memory
-        batch: List[Identity] = generator.generate_batch(count=count, include_phone=phone)
+        if direct_fields:
+            active_fields = direct_fields
+            if fields is not None:
+                for f in normalize_fields(fields):
+                    if f not in active_fields:
+                        active_fields.append(f)
+        elif fields is not None:
+            active_fields = normalize_fields(fields)
+            if not active_fields:
+                err_console.print("[bold red]Error:[/bold red] At least one valid field must be specified.")
+                raise typer.Exit(code=1)
+        else:
+            saved_fields = config_mgr.get_default_fields()
+            active_fields = list(saved_fields)
 
-        # 2. If Excel requested, prepare export
-        excel_path: Optional[Path] = None
+        # 3. Resolve output format
+        format_flags = []
         if excel:
-            excel_path = export_to_excel(batch, storage_mgr.exports_dir)
+            format_flags.append("excel")
+        if json_output:
+            format_flags.append("json")
+        if csv_output:
+            format_flags.append("csv")
+        if terminal_output:
+            format_flags.append("terminal")
 
-        # 3. Commit new TXT entries to persistent storage
+        if len(format_flags) > 1:
+            err_console.print("[bold red]Error:[/bold red] Only one output format can be selected.")
+            raise typer.Exit(code=1)
+
+        if format_flags:
+            selected_format = format_flags[0]
+        else:
+            selected_format = config_mgr.get_default_format()
+
+        # 4. Resolve output location
+        if location is not None:
+            base_location = Path(location).resolve()
+        else:
+            base_location = config_mgr.get_default_location().resolve()
+
+        folder_name = config_mgr.get_folder_name()
+        export_folder = base_location / folder_name
+
+        if selected_format == "terminal" and batch_count > 1:
+            console.print(f"Generating {batch_count} identities...")
+
+        # 5. Generate complete batch
+        batch: List[Identity] = generator.generate_batch(
+            count=batch_count,
+            fields=active_fields,
+            include_phone=False,
+        )
+
+        # 6. Commit new records to persistent history
         storage_mgr.append_batch(batch)
 
-        # 4. Handle output formats
-        if json_output:
-            if count == 1:
-                typer.echo(batch[0].to_json())
+        # 7. Render or export
+        chk = get_check_mark()
+
+        # JSON format handling:
+        # If --location is provided, export to identities.json file.
+        # Otherwise, output clean JSON directly to terminal/stdout (supporting CLI piping & tests).
+        if selected_format == "json" and location is None:
+            if batch_count == 1:
+                typer.echo(batch[0].to_json(selected_fields=active_fields))
             else:
-                data = [item.to_dict() for item in batch]
+                data = [item.to_dict(selected_fields=active_fields) for item in batch]
                 typer.echo(json.dumps(data, indent=2))
             return
 
-        if count == 1:
-            item = batch[0]
-            if not quiet:
-                panel_text = f"[bold cyan]Name[/bold cyan]     : {item.name}\n"
-                panel_text += f"[bold cyan]Email[/bold cyan]    : {item.email}\n"
-                panel_text += f"[bold cyan]Password[/bold cyan] : {item.password}"
-                if phone:
-                    panel_text += f"\n[bold cyan]Phone[/bold cyan]    : {item.phone}"
-
+        if selected_format == "terminal":
+            if batch_count == 1:
+                item = batch[0]
+                lines = []
+                for f in active_fields:
+                    val = getattr(item, f, "")
+                    label = FIELD_LABELS.get(f, f.title())
+                    lines.append(f"[bold cyan]{label:<8}[/bold cyan] : {val}")
+                panel_text = "\n".join(lines)
                 panel = Panel(
                     panel_text,
                     title="[bold green]GENERATED IDENTITY[/bold green]",
                     expand=False,
                 )
-                chk = get_check_mark()
                 console.print(panel)
                 console.print(f"\n[green]{chk}[/green] Identity generated successfully.")
-                if excel and excel_path:
-                    console.print(f"[green]{chk}[/green] Excel file created: {excel_path}")
             else:
-                typer.echo(f"Name     : {item.name}")
-                typer.echo(f"Email    : {item.email}")
-                typer.echo(f"Password : {item.password}")
-                if phone:
-                    typer.echo(f"Phone    : {item.phone}")
-        else:
-            if not quiet:
-                chk = get_check_mark()
-                console.print(f"[green]{chk}[/green] Generated {count} identities")
+                for idx, item in enumerate(batch, 1):
+                    console.print(f"[bold green]Identity {idx}[/bold green]")
+                    for f in active_fields:
+                        val = getattr(item, f, "")
+                        label = FIELD_LABELS.get(f, f.title())
+                        console.print(f"  [bold cyan]{label:<8}[/bold cyan] : {val}")
+                    if idx < batch_count:
+                        console.print()
+                console.print(f"\n[green]{chk}[/green] Generated {batch_count} identities")
                 console.print(f"[green]{chk}[/green] Uniqueness verified")
                 console.print(f"[green]{chk}[/green] Identity history updated")
-                if excel and excel_path:
-                    console.print(f"[green]{chk}[/green] Excel file created\n")
-                    console.print("File:")
-                    console.print(f"[bold]{excel_path}[/bold]")
-            else:
-                typer.echo(f"Generated {count} unique identities.")
+            return
+
+        # File-based export (excel, json with location, csv)
+        if selected_format == "excel":
+            exported_file = export_to_excel(batch, export_folder, fields=active_fields)
+            format_display = "Excel"
+            if storage_mgr.exports_dir.resolve() != export_folder.resolve():
+                import shutil
+                storage_mgr.exports_dir.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(exported_file, storage_mgr.exports_dir / exported_file.name)
+        elif selected_format == "json":
+            exported_file = export_to_json(batch, export_folder, fields=active_fields)
+            format_display = "JSON"
+        elif selected_format == "csv":
+            exported_file = export_to_csv(batch, export_folder, fields=active_fields)
+            format_display = "CSV"
+        else:
+            err_console.print(f"[bold red]Error:[/bold red] Unknown format: {selected_format}")
+            raise typer.Exit(code=1)
+
+        console.print(f"[green]{chk}[/green] Generation completed\n")
+        console.print(f"[green]{chk}[/green] Generated {batch_count} identities")
+        console.print(f"[green]{chk}[/green] Uniqueness verified")
+        console.print(f"[green]{chk}[/green] Identity history updated")
+        if selected_format == "excel":
+            console.print(f"[green]{chk}[/green] Excel file created\n")
+        else:
+            console.print()
+        console.print(f"Records: {batch_count}")
+        console.print("Fields:")
+        for f in active_fields:
+            console.print(f"  {FIELD_LABELS.get(f, f.title())}")
+        console.print(f"\nFormat: {format_display}\n")
+        console.print("Saved to:")
+        console.print(f"[bold]{exported_file}[/bold]")
 
     except typer.Exit:
         raise
@@ -175,12 +325,40 @@ def generate(
 
 
 @app.command(name="config", help="View or update Identity CLI configuration.")
-def config(
+def config_command(
     data_dir: Optional[Path] = typer.Option(
         None,
         "--data-dir",
         "-d",
         help="Set custom persistent storage directory (e.g. D:\\IdentityData).",
+    ),
+    location: Optional[Path] = typer.Option(
+        None,
+        "--location",
+        "-l",
+        help="Set default output location for generated files.",
+    ),
+    fields: Optional[str] = typer.Option(
+        None,
+        "--fields",
+        "-f",
+        help="Set default fields (comma-separated: name, email, password, phone).",
+    ),
+    quantity: Optional[int] = typer.Option(
+        None,
+        "--quantity",
+        "-q",
+        help="Set default generation quantity.",
+    ),
+    format_opt: Optional[str] = typer.Option(
+        None,
+        "--format",
+        help="Set default output format (terminal, excel, json, csv).",
+    ),
+    folder_name: Optional[str] = typer.Option(
+        None,
+        "--folder-name",
+        help="Set folder name for file outputs (default: generated-names).",
     ),
     show: bool = typer.Option(
         False,
@@ -189,27 +367,69 @@ def config(
         help="Display current configuration.",
     ),
 ) -> None:
-    """Configure data directory or display current settings."""
+    """Configure CLI preferences or display current settings."""
     try:
         config_mgr, storage_mgr = get_managers()
+        chk = get_check_mark()
+        updated = False
 
         if data_dir is not None:
-            # Set new data directory
             resolved_dir = config_mgr.set_data_dir(data_dir)
-            chk = get_check_mark()
             console.print(f"[green]{chk}[/green] Data directory updated successfully.")
             console.print(f"Persistent data will now be stored in: [bold]{resolved_dir}[/bold]")
+            updated = True
+
+        if location is not None:
+            resolved_loc = config_mgr.set_default_location(location)
+            console.print(f"[green]{chk}[/green] Default location updated successfully: [bold]{resolved_loc}[/bold]")
+            updated = True
+
+        if fields is not None:
+            clean_fields = normalize_fields(fields)
+            config_mgr.set_default_fields(clean_fields)
+            console.print(f"[green]{chk}[/green] Default fields updated successfully: [bold]{', '.join(clean_fields)}[/bold]")
+            updated = True
+
+        if quantity is not None:
+            clean_qty = config_mgr.set_default_quantity(quantity)
+            console.print(f"[green]{chk}[/green] Default quantity updated successfully: [bold]{clean_qty}[/bold]")
+            updated = True
+
+        if format_opt is not None:
+            clean_fmt = config_mgr.set_default_format(format_opt)
+            console.print(f"[green]{chk}[/green] Default format updated successfully: [bold]{clean_fmt}[/bold]")
+            updated = True
+
+        if folder_name is not None:
+            clean_folder = config_mgr.set_folder_name(folder_name)
+            console.print(f"[green]{chk}[/green] Folder name updated successfully: [bold]{clean_folder}[/bold]")
+            updated = True
+
+        if updated and not show:
             return
 
         # Show current configuration
         current_data_dir = config_mgr.get_data_dir()
+        current_location = config_mgr.get_default_location()
+        current_fields = config_mgr.get_default_fields()
+        current_quantity = config_mgr.get_default_quantity()
+        current_format = config_mgr.get_default_format()
+        current_folder = config_mgr.get_folder_name()
         stats = storage_mgr.get_stats()
 
         console.print("[bold]Identity CLI Configuration[/bold]\n")
         console.print("Data directory:")
         console.print(f"{current_data_dir}\n")
-        console.print("Exports directory:")
-        console.print(f"{storage_mgr.exports_dir}\n")
+        console.print("Default location:")
+        console.print(f"{current_location}\n")
+        console.print("Default folder:")
+        console.print(f"{current_folder}\n")
+        console.print("Default fields:")
+        console.print(f"{', '.join(current_fields)}\n")
+        console.print("Default quantity:")
+        console.print(f"{current_quantity}\n")
+        console.print("Default format:")
+        console.print(f"{current_format}\n")
         console.print("Stored names:")
         console.print(f"{stats['stored_names']}\n")
         console.print("Stored emails:")

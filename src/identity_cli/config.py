@@ -81,3 +81,104 @@ class ConfigManager:
         config["data_dir"] = str(path)
         self.save_config(config)
         return path
+
+    def get_default_location(self) -> Path:
+        """Get the configured default export location, falling back to current working directory."""
+        config = self.load_config()
+        custom_loc = config.get("default_location")
+        if custom_loc:
+            return Path(custom_loc)
+        return Path.cwd()
+
+    def set_default_location(self, new_loc: Path | str) -> Path:
+        """Set and persist default export location."""
+        path = Path(new_loc).resolve()
+        config = self.load_config()
+        config["default_location"] = str(path)
+        self.save_config(config)
+        return path
+
+    def get_default_fields(self) -> list[str]:
+        """Get default fields list, falling back to name, email, password."""
+        config = self.load_config()
+        fields = config.get("default_fields")
+        if fields and isinstance(fields, list):
+            return [str(f).strip().lower() for f in fields if str(f).strip()]
+        return ["name", "email", "password"]
+
+    def set_default_fields(self, fields: list[str]) -> list[str]:
+        """Set and persist default fields."""
+        config = self.load_config()
+        clean = [str(f).strip().lower() for f in fields if str(f).strip()]
+        config["default_fields"] = clean
+        self.save_config(config)
+        return clean
+
+    def get_default_quantity(self) -> int:
+        """Get default quantity, strictly defaulting to 1."""
+        config = self.load_config()
+        val = config.get("default_quantity")
+        if val is not None:
+            try:
+                ival = int(val)
+                if ival > 0:
+                    return ival
+            except (ValueError, TypeError):
+                pass
+        return 1
+
+    def set_default_quantity(self, qty: int) -> int:
+        """Set and persist default quantity."""
+        if qty < 1:
+            raise ValueError("Default quantity must be at least 1.")
+        config = self.load_config()
+        config["default_quantity"] = qty
+        self.save_config(config)
+        return qty
+
+    def get_default_format(self) -> str:
+        """Get default format, strictly defaulting to 'terminal'."""
+        config = self.load_config()
+        fmt = config.get("default_format")
+        if fmt and isinstance(fmt, str):
+            clean_fmt = fmt.strip().lower()
+            if clean_fmt in ["terminal", "excel", "json", "csv"]:
+                return clean_fmt
+        return "terminal"
+
+    def set_default_format(self, fmt: str) -> str:
+        """Set and persist default format."""
+        clean_fmt = fmt.strip().lower()
+        if clean_fmt not in ["terminal", "excel", "json", "csv"]:
+            raise ValueError(f"Unsupported format '{fmt}'. Supported: terminal, excel, json, csv.")
+        config = self.load_config()
+        config["default_format"] = clean_fmt
+        self.save_config(config)
+        return clean_fmt
+
+    def get_folder_name(self) -> str:
+        """Get folder name for file outputs, defaulting to 'generated-names'."""
+        config = self.load_config()
+        folder = config.get("folder_name")
+        if folder and isinstance(folder, str) and folder.strip():
+            return folder.strip()
+        return "generated-names"
+
+    def set_folder_name(self, name: str) -> str:
+        """Set and persist folder name."""
+        clean_name = name.strip() or "generated-names"
+        config = self.load_config()
+        config["folder_name"] = clean_name
+        self.save_config(config)
+        return clean_name
+
+    def is_setup_completed(self) -> bool:
+        """Check if first-time setup has been completed."""
+        config = self.load_config()
+        return bool(config.get("setup_completed", False))
+
+    def set_setup_completed(self, completed: bool = True) -> None:
+        """Record whether first-time setup is completed."""
+        config = self.load_config()
+        config["setup_completed"] = completed
+        self.save_config(config)
