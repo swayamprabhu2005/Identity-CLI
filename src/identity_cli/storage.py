@@ -29,8 +29,10 @@ class HistoryData:
 
     def add(self, identity: Identity) -> None:
         """Add an identity's attributes to history sets."""
-        self.names.add(identity.name.strip().lower())
-        self.emails.add(identity.email.strip().lower())
+        if identity.name:
+            self.names.add(identity.name.strip().lower())
+        if identity.email:
+            self.emails.add(identity.email.strip().lower())
         if identity.phone:
             self.phones.add(identity.phone.strip())
 
@@ -78,26 +80,29 @@ class StorageManager:
 
         self.ensure_directories()
 
-        names_to_write = [i.name.strip() for i in identities]
-        emails_to_write = [i.email.strip() for i in identities]
-        passwords_to_write = [i.password.strip() for i in identities]
+        names_to_write = [i.name.strip() for i in identities if i.name]
+        emails_to_write = [i.email.strip() for i in identities if i.email]
+        passwords_to_write = [i.password.strip() for i in identities if i.password]
         phones_to_write = [i.phone.strip() for i in identities if i.phone]
 
         # Prepare string payloads
-        names_content = "\n".join(names_to_write) + "\n"
-        emails_content = "\n".join(emails_to_write) + "\n"
-        passwords_content = "\n".join(passwords_to_write) + "\n"
+        names_content = ("\n".join(names_to_write) + "\n") if names_to_write else ""
+        emails_content = ("\n".join(emails_to_write) + "\n") if emails_to_write else ""
+        passwords_content = ("\n".join(passwords_to_write) + "\n") if passwords_to_write else ""
         phones_content = ("\n".join(phones_to_write) + "\n") if phones_to_write else ""
 
         # Write sequentially to persistent files
-        with open(self.names_file, "a", encoding="utf-8") as f:
-            f.write(names_content)
+        if names_content:
+            with open(self.names_file, "a", encoding="utf-8") as f:
+                f.write(names_content)
 
-        with open(self.emails_file, "a", encoding="utf-8") as f:
-            f.write(emails_content)
+        if emails_content:
+            with open(self.emails_file, "a", encoding="utf-8") as f:
+                f.write(emails_content)
 
-        with open(self.passwords_file, "a", encoding="utf-8") as f:
-            f.write(passwords_content)
+        if passwords_content:
+            with open(self.passwords_file, "a", encoding="utf-8") as f:
+                f.write(passwords_content)
 
         if phones_content:
             with open(self.phones_file, "a", encoding="utf-8") as f:
@@ -115,6 +120,5 @@ class StorageManager:
             "stored_emails": emails_count,
             "stored_passwords": passwords_count,
             "stored_phones": phones_count,
-            # Number of total identities is determined by stored names
-            "total_identities": names_count,
+            "total_identities": max(names_count, emails_count, passwords_count, phones_count),
         }

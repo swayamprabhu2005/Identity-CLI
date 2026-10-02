@@ -23,6 +23,47 @@ SPECIAL_CHARACTERS = "!@#$%^&*_-+"
 MAX_BATCH_SIZE = 10000
 MAX_ATTEMPTS = 500
 
+SUPPORTED_FIELDS = ["name", "email", "password", "phone"]
+FIELD_ALIASES = {
+    "name": "name",
+    "full-name": "name",
+    "fullname": "name",
+    "email": "email",
+    "password": "password",
+    "pass": "password",
+    "phone": "phone",
+    "phone-number": "phone",
+}
+
+
+def normalize_field(field_name: str) -> str:
+    """Normalize a field name or alias into its canonical representation."""
+    clean = field_name.strip().lower()
+    if clean in FIELD_ALIASES:
+        return FIELD_ALIASES[clean]
+    raise ValueError(
+        f"Unknown field '{field_name}'. Supported fields: {', '.join(SUPPORTED_FIELDS)}"
+    )
+
+
+def normalize_fields(raw_fields: Optional[list[str] | str]) -> list[str]:
+    """Parse and normalize field names from string or list, preserving order without duplicates."""
+    if not raw_fields:
+        return []
+    if isinstance(raw_fields, str):
+        parts = [p.strip() for p in raw_fields.split(",") if p.strip()]
+    else:
+        parts = [str(p).strip() for p in raw_fields if str(p).strip()]
+
+    seen = set()
+    normalized = []
+    for p in parts:
+        canon = normalize_field(p)
+        if canon not in seen:
+            seen.add(canon)
+            normalized.append(canon)
+    return normalized
+
 
 class GenerationError(Exception):
     """Raised when unique synthetic identity cannot be generated."""
@@ -120,12 +161,36 @@ class IdentityGenerator:
             f"Unable to find a unique phone after {MAX_ATTEMPTS} attempts."
         )
 
-    def generate_identity(self, include_phone: bool = False) -> Identity:
-        """Generate a single unique identity and register it in working history."""
-        name = self.generate_name()
-        email = self.generate_email(name)
-        password = self.generate_password()
-        phone = self.generate_phone() if include_phone else None
+    def generate_identity(
+        self,
+        fields: Optional[list[str] | str] = None,
+        include_phone: bool = False
+    ) -> Identity:
+        """Generate a single unique identity with only the requested fields."""
+        if fields is not None:
+            active_fields = normalize_fields(fields)
+            if include_phone and "phone" not in active_fields:
+                active_fields.append("phone")
+        else:
+            if include_phone:
+                active_fields = ["name", "email", "password", "phone"]
+            else:
+                active_fields = ["name", "email", "password"]
+
+        name = self.generate_name() if "name" in active_fields else None
+
+        if "email" in active_fields:
+            if name:
+                email = self.generate_email(name)
+            else:
+                first = self.faker.first_name()
+                last = self.faker.last_name()
+                email = self.generate_email(f"{first} {last}")
+        else:
+            email = None
+
+        password = self.generate_password() if "password" in active_fields else None
+        phone = self.generate_phone() if "phone" in active_fields else None
 
         identity = Identity(
             name=name,
@@ -136,7 +201,12 @@ class IdentityGenerator:
         self.history.add(identity)
         return identity
 
-    def generate_batch(self, count: int, include_phone: bool = False) -> List[Identity]:
+    def generate_batch(
+        self,
+        count: int,
+        fields: Optional[list[str] | str] = None,
+        include_phone: bool = False
+    ) -> List[Identity]:
         """Generate a batch of unique identities.
 
         Validates count and guarantees uniqueness across persistent history
@@ -149,7 +219,7 @@ class IdentityGenerator:
 
         batch: List[Identity] = []
         for _ in range(count):
-            identity = self.generate_identity(include_phone=include_phone)
+            identity = self.generate_identity(fields=fields, include_phone=include_phone)
             batch.append(identity)
 
         return batch
