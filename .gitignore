@@ -20,14 +20,21 @@ ENV/
 .coverage
 htmlcov/
 
-# Identity CLI persistent data & exports (do not commit local test data)
+# Identity CLI persistent data & local exports (do not commit local test data)
 data/
 exports/
+generated-names/
 *.xlsx
+*.csv
 names.txt
 emails.txt
 passwords.txt
 phones.txt
+
+# VS Code Extension build artifacts & dependencies
+vscode-extension/node_modules/
+vscode-extension/dist/
+vscode-extension/*.vsix
 
 # Editor / IDE
 .vscode/

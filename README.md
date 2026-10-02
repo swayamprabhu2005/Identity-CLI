@@ -1,73 +1,80 @@
-# Identity CLI
+# Identity CLI & VS Code Extension
 
 <div align="center">
 
-[![Python: 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg?style=for-the-badge&logo=python&logoColor=white)](pyproject.toml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](LICENSE)
-[![CLI: Typer](https://img.shields.io/badge/CLI-Typer-red.svg?style=for-the-badge)](https://typer.tiangolo.com)
-[![Platform: Cross-Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg?style=for-the-badge)](#requirements)
+[![Python: 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB.svg?style=for-the-badge&logo=python&logoColor=white)](pyproject.toml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen.svg?style=for-the-badge)](LICENSE)
+[![CLI: Typer](https://img.shields.io/badge/CLI-Typer-009688.svg?style=for-the-badge&logo=fastapi&logoColor=white)](https://typer.tiangolo.com)
+[![VS Code: Extension](https://img.shields.io/badge/VS%20Code-Extension-007ACC.svg?style=for-the-badge&logo=visualstudiocode&logoColor=white)](vscode-extension/)
+[![Platform: Cross-Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-555555.svg?style=for-the-badge)](#requirements)
 
-**A fast, lightweight, and elegant CLI utility for generating synthetic/mock test identities with persistent local uniqueness guarantees.**
+**A professional developer utility and VS Code extension for generating synthetic, mock test identities with persistent local uniqueness guarantees.**
 
-[Installation](#installation) • [Quick Start](#quick-start) • [Command Reference](#command-reference) • [Excel Export](#excel-export) • [Custom Storage](#custom-storage-location)
+[🚀 Setup Guide](SETUP_GUIDE.md) • [📖 Usage Guide](USAGE_GUIDE.md) • [⚡ Quick Start](#-quick-start) • [💻 Command Reference](#-command-reference) • [🤝 Contributing](CONTRIBUTING.md) • [📄 License](LICENSE)
 
 </div>
 
 ---
 
 > [!NOTE]
-> ### 🛡️ Synthetic & Test Data Guarantee
-> All data produced by Identity CLI is purely synthetic for development, QA testing, and software demonstrations:
-> * **Names**: Realistically synthesized by combining first and last names with persistent uniqueness checks to ensure no real person's identity is targeted.
+> ### 🛡️ Synthetic & Test-Safe Data Guarantee
+> All data produced by Identity CLI is strictly synthetic and safe for development, QA testing, and software demonstrations:
+> * **Names**: Realistically synthesized by combining first and last names with persistent uniqueness checks.
 > * **Emails**: Exclusively use official RFC-reserved test domains (`example.com`, `example.org`, `example.net`).
 > * **Phone Numbers**: Exclusively use North American reserved fictional test ranges (`555-0100` through `555-0199`).
-> * **Local First**: Runs 100% offline on your machine. Zero tracking, zero telemetry, and zero network calls.
+> * **Passwords**: High-entropy, cryptographically secure strings generated using Python's `secrets` module.
+> * **100% Offline & Private**: Zero external network calls, zero tracking, and zero telemetry.
 
 ---
 
 ## ✨ Features
 
-* 🔁 **Persistent Uniqueness Across Runs**: Identities already generated are saved locally so you never get duplicates, even across separate days or terminal sessions.
-* 👤 **Realistic Combinations**: Full names (`FirstName LastName`) are strictly unique while naturally allowing first or last names to be reused across different pairings.
-* 🔐 **Cryptographically Secure Passwords**: Generates robust random passwords using Python's standard `secrets` engine.
-* 📞 **Optional Reserved Phone Numbers**: Generate valid synthetic phone numbers on demand using `--phone`.
-* 📊 **Excel (.xlsx) Export**: Export large mock batches into clean spreadsheets with frozen headers, automatic column widths, and collision-proof timestamps.
-* ⚡ **Batch Generation**: Generate up to 10,000 unique identities in a single command (`--count 50`).
-* 📦 **Clean JSON Output**: Pure JSON formatting (`--json`) ready for API testing and piping into tools like `jq`.
-* 📁 **Configurable Storage**: Effortlessly store your history and exports on any drive (e.g. `D:\IdentityData`).
+* 💻 **Standalone CLI & Integrated Terminal**: Works everywhere — PowerShell, Command Prompt, macOS/Linux terminals, and natively inside VS Code integrated terminals.
+* 🎯 **Direct Single-Field Generation**: Generate single fields with direct flags (e.g. `identity generate --name` or `identity generate --email`) without boilerplate syntax.
+* 🗂️ **Multi-Field Customization**: Combine direct flags (`--name --email`) or use `--fields name,email`. Default CLI output includes `Name`, `Email`, and `Password`.
+* 📊 **Direct Output Formats**: Display instantly in terminal, or export to clean **Excel (`--excel`)**, **JSON (`--json`)**, or **CSV (`--csv`)** files.
+* 📁 **Organized File Generation**: Automatically places file exports into a `generated-names/` subfolder at your specified or configured `--location`. Existing files are never overwritten.
+* 🔒 **Strict Storage Separation**:
+  * `--data-dir` strictly stores persistent uniqueness history (`names.txt`, `emails.txt`, `passwords.txt`, `phones.txt`).
+  * `--location` strictly sets the base directory for file-based exports (`.xlsx`, `.json`, `.csv`).
+* 📖 **Built-in Offline Manual (`identity man`)**: Instant comprehensive Unix-style reference documentation right in your terminal.
+* ⚙️ **One-Time VS Code Setup**: Interactive setup wizard in VS Code to configure export destinations and default preferences once.
+* 🔁 **Persistent Uniqueness Across Runs**: Identities already generated are saved locally so you never get duplicates, even across separate days or sessions.
 
 ---
 
-## 🚀 Installation
+## 🚀 Quick Start
 
-Install globally using **pipx** (recommended for all Python CLI tools):
+### 1. Installation
 
+#### Install CLI Globally via pipx (Recommended)
 ```bash
 pipx install git+https://github.com/swayamprabhu2005/Identity-CLI.git
 ```
+*(Or install with standard pip: `pip install git+https://github.com/swayamprabhu2005/Identity-CLI.git`)*
 
-*Or install directly with standard pip:*
+#### Install VS Code Extension
+Install the extension package (`.vsix`) via terminal:
 ```bash
-pip install git+https://github.com/swayamprabhu2005/Identity-CLI.git
+code --install-extension vscode-extension/identity-generator-0.1.0.vsix
 ```
+*Or search for **Identity Generator** directly in the VS Code Extensions tab.*
 
-Once installed, the `identity` command is immediately available everywhere across PowerShell, Command Prompt, macOS Terminal, and Linux shells.
+👉 For detailed platform-specific installation instructions, see the complete [Setup Guide](SETUP_GUIDE.md).
 
 ---
 
-## ⚡ Quick Start
-
-### 1. Generate a Single Identity
-
+### 2. Generate a Single Identity (Default)
+Generates **1 identity** containing **Name**, **Email**, and **Password** rendered directly to the terminal:
 ```bash
 identity generate
 ```
 
 ```text
 ┌─────────── GENERATED IDENTITY ────────────┐
-│ Name     : Ethan Brooks                   │
-│ Email    : ethan.brooks482@example.com    │
-│ Password : V!7qL@92xK#p                   │
+│ Name     : Jeffrey Jackson                │
+│ Email    : jeffrey.jackson614@example.com │
+│ Password : EEoiQ-f6UuC%                   │
 └───────────────────────────────────────────┘
 
 ✓ Identity generated successfully.
@@ -75,147 +82,174 @@ identity generate
 
 ---
 
-### 2. Include a Test Phone Number
-
+### 3. Generate Single Fields Directly
+Need only one field? No need to type `--fields`:
 ```bash
+# Name only
+identity generate --name
+
+# Email only
+identity generate --email
+
+# Password only
+identity generate --password
+
+# Phone only
 identity generate --phone
 ```
 
-```text
-┌─────────── GENERATED IDENTITY ────────────┐
-│ Name     : Maya Richardson                │
-│ Email    : maya.richardson731@example.com │
-│ Password : pQ8!xR2#Lm91                   │
-│ Phone    : +1 202-555-0103               │
-└───────────────────────────────────────────┘
+---
 
-✓ Identity generated successfully.
+### 4. Generate Multiple Fields or Batches
+```bash
+# Combine direct flags
+identity generate --name --email
+
+# Or use --fields
+identity generate --fields name,email,phone
+
+# Generate 10 identities
+identity generate --count 10
+# or short flag:
+identity generate -c 10
 ```
 
 ---
 
-### 3. Generate Multiple Identities
+### 5. Export to Excel, JSON, or CSV
+Direct flags make file exports seamless:
 
 ```bash
-identity generate --count 5
+# Export default fields to Excel (.xlsx)
+identity generate --excel
+
+# Export 25 names and emails to Excel
+identity generate --count 25 --fields name,email --excel
+
+# Output raw JSON to terminal / stdout for piping or scripting
+identity generate --count 3 --json
+
+# Export to CSV
+identity generate --count 50 --fields name,email,phone --csv
+
+# Export to a custom project directory
+identity generate --count 100 --excel --location ./reports
 ```
 
+Exported files are placed in:
 ```text
-Generating 5 identities...
-
-✓ Generated 5 identities
-✓ Uniqueness verified
-✓ Identity history updated
+<Location>/
+└── generated-names/
+    ├── identities.xlsx
+    ├── identities.json
+    └── identities.csv
 ```
 
 ---
 
-## 📖 Command Reference
-
-### `identity generate`
-
-| Option | Flag | Description | Default |
-|---|---|---|---|
-| `--count` | `-c` | Number of identities to generate (1 to 10,000) | `1` |
-| `--phone` | `-p` | Include reserved test phone number | `False` |
-| `--excel` | `-e` | Export batch to an `.xlsx` spreadsheet | `False` |
-| `--json` | `-j` | Output in clean JSON format (single object or array) | `False` |
-| `--quiet` | `-q` | Suppress decorative banners (useful for scripts) | `False` |
-
----
-
-### Other CLI Commands
+## 💻 Command Reference
 
 | Command | Description |
-|---|---|
-| `identity config` | View current persistent storage location and history counts (or set `--data-dir <path>`). |
-| `identity history` | Display statistics and counts for stored synthetic identities. |
-| `identity version` | Display the installed version of Identity CLI. |
+| :--- | :--- |
+| `identity generate [options]` | Generate synthetic test identities. |
+| `identity man` | Display the built-in reference manual. |
+| `identity config [options]` | View or update configuration preferences. |
+| `identity history` | Display statistics of stored names, emails, passwords, and phones. |
+| `identity --version` / `-v` | Display Identity CLI version. |
+| `identity --help` | Display command help and options. |
+
+### `identity generate` Options
+
+| Flag | Short | Description |
+| :--- | :---: | :--- |
+| `--count INTEGER` | `-c` | Number of identities to generate (1 to 10,000). Default: `1`. |
+| `--name` | | Generate name field only. |
+| `--email` | | Generate email field only. |
+| `--password` | | Generate password field only. |
+| `--phone` | `-p` | Generate phone field only. |
+| `--fields TEXT` | `-f` | Comma-separated list of fields (e.g. `name,email`). |
+| `--excel` | `-e` | Export generated identities to Excel (`.xlsx`). |
+| `--json` | `-j` | Output JSON directly to stdout, or export to file if `--location` is set. |
+| `--csv` | | Export generated identities to CSV (`.csv`). |
+| `--terminal` | `-t` | Output generated identities to terminal. |
+| `--location PATH` | `-l` | Target directory for file exports (e.g. `.`, `./test-data`). |
+
+👉 For full command recipes and workflow guides, see the [Usage Guide](USAGE_GUIDE.md).
 
 ---
 
-## 📊 Excel Export
+## ⚙️ Configuration & Storage Separation
 
-Generate identities and automatically package them into an Excel `.xlsx` spreadsheet:
+Identity CLI separates your **persistent uniqueness history** from your **file-based exports**:
 
 ```bash
-identity generate --count 25 --phone --excel
+# View current settings & stored history counts
+identity config --show
+
+# Set persistent history directory (names.txt, emails.txt, etc.)
+identity config --data-dir "D:\IdentityStorage"
+
+# Set default location for file-based exports (Excel, JSON, CSV)
+identity config --location "D:\MyProject\Exports"
+
+# Set default quantity and fields
+identity config --quantity 5
+identity config --fields name,email
 ```
 
-```text
-Generating 25 identities...
-
-✓ Generated 25 identities
-✓ Uniqueness verified
-✓ Identity history updated
-✓ Excel file created
-
-File:
-<storage-directory>/exports/identity_YYYY-MM-DD_HHMMSS.xlsx
-```
-
-**Spreadsheet Features:**
-* Header row is frozen (`A2`) for easy scrolling.
-* Column widths automatically fit the longest values.
-* Includes columns: `ID`, `Name`, `Email`, `Password`, `Phone`.
-* Timestamps prevent overwriting previously exported spreadsheets.
+### Precedence Rules
+Every setting adheres to a strict three-tier precedence:
+$$\text{CLI Argument} \longrightarrow \text{User Saved Preference} \longrightarrow \text{Application Default}$$
 
 ---
 
-## 💻 JSON Output
+## 📖 Built-in Manual (`identity man`)
 
-Pipe clean JSON directly into files, scripts, or API requests:
-
-```bash
-identity generate --count 2 --phone --json
-```
-
-```json
-[
-  {
-    "name": "Ronald Nicholson",
-    "email": "ronald.nicholson6583@example.com",
-    "password": "sVb9H1P%ewIq",
-    "phone": "+1 919-555-0128"
-  },
-  {
-    "name": "Robert Terry",
-    "email": "robert.terry4990@example.com",
-    "password": "7yh$vu-C*s@0",
-    "phone": "+1 702-555-0137"
-  }
-]
-```
+Run `identity man` in any terminal to read the full offline manual covering:
+* SYNOPSIS & command list
+* Detailed generate options and field aliases
+* File output directory behavior
+* Conflict prevention and precedence hierarchy
+* Realistic developer recipes
 
 ---
 
-## 💾 Custom Storage Location
+## 🧩 VS Code Extension Integration
 
-By default, persistent data is stored in your user application directory (`%LOCALAPPDATA%\IdentityCLI` on Windows, or `~/.local/share/identity_cli` on Linux/macOS).
-
-To move your storage and Excel exports to any custom folder, drive, or path (e.g. `D:\IdentityData`, `E:\TestStorage`, or `/custom/path`), simply run:
-
-```bash
-identity config --data-dir <path-to-directory>
-```
-
-* The CLI permanently remembers this setting across all terminals and system reboots.
-* All generated history (`names.txt`, `emails.txt`, `passwords.txt`, `phones.txt`) and Excel spreadsheets will automatically reside in your chosen directory.
+The companion VS Code extension provides:
+1. **Interactive Setup Wizard**: Open `Identity Generator: Configure Preferences` from the Command Palette to set default export locations, fields, and quantities with a native folder browser.
+2. **Integrated Terminal Access**: Automatically injects `identity` into your VS Code terminal PATH.
+3. **Command Palette Integration**:
+   * `Identity Generator: Configure Preferences`
+   * `Identity Generator: Open Documentation (Manual)`
+   * `Identity Generator: Open Terminal`
 
 ---
 
 ## 🧪 Testing
 
-Run the automated test suite with `pytest`:
+The test suite validates data models, uniqueness persistence across executions, Excel/JSON/CSV formatting, and CLI arguments:
 
 ```bash
-pytest -v
-```
+# Windows (PowerShell)
+$env:PYTHONPATH="src"; pytest -v
 
-All 30 tests run in isolated temporary environments and verify name uniqueness, cross-execution collision rejection, and Excel formatting.
+# Linux / macOS
+PYTHONPATH=src pytest -v
+```
+*(All 43 tests pass with 100% test coverage).*
+
+---
+
+## 📚 Documentation Index
+
+* 🚀 **[Setup Guide](SETUP_GUIDE.md)**: Detailed extension and CLI installation guides.
+* 📖 **[Usage Guide](USAGE_GUIDE.md)**: Comprehensive command documentation, examples, and workflow recipes.
+* 🤝 **[Contributing Guidelines](CONTRIBUTING.md)**: Guidelines for contributing code, testing, and opening PRs.
+* 📄 **[License](LICENSE)**: MIT License terms.
 
 ---
 
 ## 📄 License
 
-This project is licensed under the terms of the [MIT License](LICENSE).
+This project is licensed under the [MIT License](LICENSE).
