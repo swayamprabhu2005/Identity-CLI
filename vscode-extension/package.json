@@ -1,0 +1,111 @@
+{
+  "name": "identity-generator",
+  "displayName": "Identity Generator",
+  "description": "Developer utility for generating unique synthetic mock identities directly from the VS Code integrated terminal.",
+  "version": "0.1.0",
+  "publisher": "swayamprabhu2005",
+  "icon": "icon.png",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Testing",
+    "Other"
+  ],
+  "keywords": [
+    "identity",
+    "generator",
+    "mock data",
+    "testing",
+    "synthetic",
+    "faker",
+    "cli"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/swayamprabhu2005/Identity-CLI.git"
+  },
+  "bugs": {
+    "url": "https://github.com/swayamprabhu2005/Identity-CLI/issues"
+  },
+  "homepage": "https://github.com/swayamprabhu2005/Identity-CLI#readme",
+  "license": "MIT",
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "identity.configure",
+        "title": "Configure Preferences",
+        "category": "Identity Generator"
+      },
+      {
+        "command": "identity.man",
+        "title": "Open Documentation (Manual)",
+        "category": "Identity Generator"
+      },
+      {
+        "command": "identity.openTerminal",
+        "title": "Open Integrated Terminal",
+        "category": "Identity Generator"
+      }
+    ],
+    "configuration": {
+      "title": "Identity Generator",
+      "properties": {
+        "identityGenerator.defaultLocation": {
+          "type": "string",
+          "default": "",
+          "description": "Default directory path for file-based exports (Excel, JSON, CSV)."
+        },
+        "identityGenerator.defaultFields": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "name",
+            "email",
+            "password"
+          ],
+          "description": "Default fields to generate."
+        },
+        "identityGenerator.defaultQuantity": {
+          "type": "integer",
+          "default": 1,
+          "minimum": 1,
+          "maximum": 10000,
+          "description": "Default quantity of identities to generate."
+        },
+        "identityGenerator.defaultFormat": {
+          "type": "string",
+          "enum": [
+            "terminal",
+            "excel",
+            "json",
+            "csv"
+          ],
+          "default": "terminal",
+          "description": "Default output format."
+        },
+        "identityGenerator.folderName": {
+          "type": "string",
+          "default": "generated-names",
+          "description": "Folder name created inside the default location for exported files."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.3.3"
+  }
+}
