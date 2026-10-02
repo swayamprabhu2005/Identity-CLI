@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# 1. Check if identity exists in PATH outside this shim directory
+which -a identity 2>/dev/null | while read -r line; do
+    if [ "$(dirname "$line")" != "$SELF_DIR" ]; then
+        exec "$line" "$@"
+    fi
+done
+
+# 2. If running from repository or alongside src, ensure PYTHONPATH includes src
+if [ -d "$SELF_DIR/../../src/identity_cli" ]; then
+    export PYTHONPATH="$SELF_DIR/../../src:$PYTHONPATH"
+elif [ -d "$SELF_DIR/../src/identity_cli" ]; then
+    export PYTHONPATH="$SELF_DIR/../src:$PYTHONPATH"
+fi
+
+# 3. Try running via python3 / python
+if command -v python3 &>/dev/null; then
+    exec python3 -m identity_cli.cli "$@"
+fi
+
+if command -v python &>/dev/null; then
+    exec python -m identity_cli.cli "$@"
+fi
+
+echo "[Identity Generator] Error: Neither python3 nor identity executable was found." >&2
+exit 1
